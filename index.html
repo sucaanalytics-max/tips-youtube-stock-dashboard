@@ -201,6 +201,7 @@
         .chart-controls {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         .chart-toggle {
@@ -458,6 +459,11 @@
             <div class="chart-container">
                 <div class="chart-header">
                     <h3 class="chart-title">🔗 Daily Views vs Stock Price (Dual-Axis)</h3>
+                    <div class="chart-controls">
+                        <button class="chart-toggle active" onclick="toggleComparisonMode('raw')">Raw Daily Views</button>
+                        <button class="chart-toggle" onclick="toggleComparisonMode('ma30')">30-Day MA</button>
+                        <button class="chart-toggle" onclick="toggleComparisonMode('ma45')">45-Day MA</button>
+                    </div>
                 </div>
                 <div class="chart-wrapper large">
                     <canvas id="comparisonChart"></canvas>
@@ -518,16 +524,22 @@
         const charts = {};
         let dashboardData = {};
         let showMA = { dailyViews: false, stockPrice: false };
+        let comparisonMode = 'raw'; // 'raw', 'ma30', 'ma45'
 
         // ============================================================================
         // UTILITY FUNCTIONS
         // ============================================================================
         function formatNumber(num) {
-            if (!num) return '0';
+            if (!num && num !== 0) return '0';
             if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
             if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
             if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
             return num.toLocaleString();
+        }
+
+        function formatNumberInMillions(num) {
+            if (!num && num !== 0) return '0.00M';
+            return (num / 1000000).toFixed(2) + 'M';
         }
 
         function formatPercent(val) {
@@ -630,13 +642,8 @@
             console.log('🔄 Loading dashboard data...');
             
             try {
-                // Fetch Tips daily data
                 const tipsDaily = await fetchSupabase('daily_label_totals', { label: 'Tips' }, 'date.desc', 2000);
-                
-                // Fetch stock prices
                 const stockPrices = await fetchSupabase('stock_prices', { symbol: 'TIPSMUSIC' }, 'date.desc', 2000);
-                
-                // Fetch monthly data
                 const tipsMonthly = await fetchSupabase('monthly_label_totals', { label: 'Tips' }, 'month.desc', 100);
 
                 if (tipsDaily.length === 0) {
@@ -650,14 +657,12 @@
                     monthly: tipsMonthly.length
                 });
 
-                // Store data
                 dashboardData = {
-                    tipsDaily: tipsDaily.reverse(), // Oldest first
+                    tipsDaily: tipsDaily.reverse(),
                     stockPrices: stockPrices.reverse(),
                     tipsMonthly: tipsMonthly.reverse()
                 };
 
-                // Update UI
                 updateMetrics();
                 updateCharts();
                 updateTable();
@@ -728,7 +733,6 @@
             const startDate = new Date(document.getElementById('startDate').value);
             const endDate = new Date(document.getElementById('endDate').value);
 
-            // Filter data by date range
             const filteredDaily = tipsDaily.filter(d => {
                 const date = new Date(d.date);
                 return date >= startDate && date <= endDate;
@@ -736,7 +740,7 @@
 
             const filteredStock = stockPrices.filter(s => {
                 const date = new Date(s.date);
-                return date >= startDate && date <= endDate && s.close > 0; // Exclude 0 prices
+                return date >= startDate && date <= endDate && s.close > 0;
             });
 
             // Chart 1: Daily Views
@@ -752,7 +756,8 @@
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                 borderWidth: 2,
                 tension: 0.4,
-                fill: true
+                fill: true,
+                pointRadius: 0  // Remove circles
             }];
 
             if (showMA.dailyViews) {
@@ -816,7 +821,7 @@
                 }
             });
 
-            // Chart 2: Stock Price
+            // Chart 2: Stock Price (SMOOTH LINE - NO CIRCLES)
             const stockDates = filteredStock.map(s => s.date);
             const stockPricesData = filteredStock.map(s => s.close);
 
@@ -829,7 +834,9 @@
                 backgroundColor: 'rgba(118, 75, 162, 0.1)',
                 borderWidth: 2,
                 tension: 0.4,
-                fill: true
+                fill: true,
+                pointRadius: 0,  // ✅ REMOVED CIRCLES
+                pointHoverRadius: 4  // Show point on hover only
             }];
 
             if (showMA.stockPrice) {
@@ -921,7 +928,8 @@
                             backgroundColor: 'rgba(16, 185, 129, 0.1)',
                             borderWidth: 2,
                             tension: 0.4,
-                            yAxisID: 'y1'
+                            yAxisID: 'y1',
+                            pointRadius: 0
                         }
                     ]
                 },
@@ -966,7 +974,44 @@
                 }
             });
 
-            // Chart 4: Comparison (Dual-Axis)
+            // Chart 4: Comparison (With MA Options)
+            updateComparisonChart();
+        }
+
+        // ============================================================================
+        // UPDATE COMPARISON CHART (WITH MA OPTIONS)
+        // ============================================================================
+        function updateComparisonChart() {
+            const { tipsDaily, stockPrices } = dashboardData;
+            
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+
+            const filteredDaily = tipsDaily.filter(d => {
+                const date = new Date(d.date);
+                return date >= startDate && date <= endDate;
+            });
+
+            const filteredStock = stockPrices.filter(s => {
+                const date = new Date(s.date);
+                return date >= startDate && date <= endDate && s.close > 0;
+            });
+
+            const dates = filteredDaily.map(d => d.date);
+            const dailyViews = filteredDaily.map(d => d.daily_views || 0);
+
+            let viewsData = dailyViews;
+            let viewsLabel = 'Daily Views';
+
+            // ✅ APPLY MA BASED ON MODE
+            if (comparisonMode === 'ma30') {
+                viewsData = calculateSMA(dailyViews, 30);
+                viewsLabel = '30-Day MA (Daily Views)';
+            } else if (comparisonMode === 'ma45') {
+                viewsData = calculateSMA(dailyViews, 45);
+                viewsLabel = '45-Day MA (Daily Views)';
+            }
+
             if (charts.comparison) charts.comparison.destroy();
 
             charts.comparison = new Chart(document.getElementById('comparisonChart'), {
@@ -975,14 +1020,15 @@
                     labels: dates,
                     datasets: [
                         {
-                            label: 'Daily Views',
-                            data: dailyViews,
+                            label: viewsLabel,
+                            data: viewsData,
                             borderColor: '#667eea',
                             backgroundColor: 'rgba(102, 126, 234, 0.1)',
                             borderWidth: 2,
                             tension: 0.4,
                             yAxisID: 'y',
-                            fill: true
+                            fill: true,
+                            pointRadius: 0
                         },
                         {
                             label: 'Stock Price (₹)',
@@ -995,7 +1041,8 @@
                             borderWidth: 2,
                             tension: 0.4,
                             yAxisID: 'y1',
-                            fill: true
+                            fill: true,
+                            pointRadius: 0
                         }
                     ]
                 },
@@ -1009,7 +1056,7 @@
                             callbacks: {
                                 label: (context) => {
                                     if (context.dataset.yAxisID === 'y') {
-                                        return `Views: ${formatNumber(context.parsed.y)}`;
+                                        return `${viewsLabel}: ${formatNumber(context.parsed.y)}`;
                                     } else {
                                         return `Stock: ₹${context.parsed.y?.toFixed(2) || 'N/A'}`;
                                     }
@@ -1043,7 +1090,7 @@
         }
 
         // ============================================================================
-        // UPDATE TABLE
+        // UPDATE TABLE (WITH UNIFORM MILLIONS FORMATTING)
         // ============================================================================
         function updateTable() {
             const { tipsDaily, stockPrices } = dashboardData;
@@ -1054,7 +1101,7 @@
             const filteredDaily = tipsDaily.filter(d => {
                 const date = new Date(d.date);
                 return date >= startDate && date <= endDate;
-            }).reverse(); // Show newest first in table
+            }).reverse();
 
             let html = '';
             filteredDaily.forEach((row, i) => {
@@ -1075,7 +1122,7 @@
                     <tr>
                         <td>${row.date}</td>
                         <td>${formatNumber(row.daily_views)}</td>
-                        <td class="${changeClass}">${change >= 0 ? '+' : ''}${formatNumber(change)}</td>
+                        <td class="${changeClass}">${change >= 0 ? '+' : ''}${formatNumberInMillions(change)}</td>
                         <td class="${changeClass}">${formatPercent(changePercent)}</td>
                         <td>₹${stock?.close?.toFixed(2) || '--'}</td>
                         <td class="${stockChangeClass}">${stock && prevStock ? (stockChange >= 0 ? '+' : '') + '₹' + stockChange.toFixed(2) : '--'}</td>
@@ -1092,7 +1139,6 @@
         function updateCorrelationAnalysis() {
             const { tipsDaily, stockPrices, tipsMonthly } = dashboardData;
 
-            // Daily correlation
             const dailyViews = tipsDaily.map(d => d.daily_views || 0);
             const stockPricesAligned = tipsDaily.map(d => {
                 const stock = stockPrices.find(s => s.date === d.date);
@@ -1117,11 +1163,8 @@
                 </div>
             `;
 
-            // Monthly correlation (if available)
             if (tipsMonthly.length > 2) {
                 const monthlyViews = tipsMonthly.map(m => m.total_views || 0);
-                // For monthly stock, we'd need to aggregate - simplified here
-                const monthlyCorr = calculateCorrelation(monthlyViews, monthlyViews); // Placeholder
                 
                 document.getElementById('correlationMonthly').innerHTML = `
                     <div class="correlation-value" style="color: #10b981;">Monthly Analysis</div>
@@ -1145,7 +1188,6 @@
             chart.options.scales.y.type = scale;
             chart.update();
 
-            // Update button states
             const container = document.getElementById(chartName + 'Chart').closest('.chart-container');
             container.querySelectorAll('.chart-toggle').forEach(btn => {
                 if (btn.textContent.toLowerCase().includes(scale)) {
@@ -1160,7 +1202,6 @@
             showMA[chartName] = !showMA[chartName];
             updateCharts();
 
-            // Update button state
             const container = document.getElementById(chartName + 'Chart').closest('.chart-container');
             const btn = Array.from(container.querySelectorAll('.chart-toggle')).find(b => b.textContent.includes('MA'));
             if (btn) {
@@ -1172,6 +1213,23 @@
                     btn.textContent = 'Show MA (7/30/45)';
                 }
             }
+        }
+
+        // ✅ NEW FUNCTION: TOGGLE COMPARISON MODE
+        function toggleComparisonMode(mode) {
+            comparisonMode = mode;
+            updateComparisonChart();
+
+            // Update button states
+            const container = document.getElementById('comparisonChart').closest('.chart-container');
+            container.querySelectorAll('.chart-toggle').forEach(btn => {
+                btn.classList.remove('active');
+                if ((mode === 'raw' && btn.textContent.includes('Raw')) ||
+                    (mode === 'ma30' && btn.textContent.includes('30-Day')) ||
+                    (mode === 'ma45' && btn.textContent.includes('45-Day'))) {
+                    btn.classList.add('active');
+                }
+            });
         }
 
         // ============================================================================
