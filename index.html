@@ -7,19 +7,13 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -28,25 +22,14 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 30px;
         }
-
         header {
             text-align: center;
             margin-bottom: 30px;
             border-bottom: 3px solid #667eea;
             padding-bottom: 20px;
         }
-
-        h1 {
-            color: #2d3748;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #718096;
-            font-size: 1.1em;
-        }
-
+        h1 { color: #2d3748; font-size: 2.5em; margin-bottom: 10px; }
+        .subtitle { color: #718096; font-size: 1.1em; }
         .filters {
             background: #f7fafc;
             padding: 20px;
@@ -57,35 +40,20 @@
             flex-wrap: wrap;
             align-items: center;
         }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        label {
-            font-weight: 600;
-            color: #2d3748;
-            font-size: 0.9em;
-        }
-
-        input[type="date"],
-        select {
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        label { font-weight: 600; color: #2d3748; font-size: 0.9em; }
+        input[type="date"], select {
             padding: 10px;
             border: 2px solid #cbd5e0;
             border-radius: 6px;
             font-size: 1em;
             transition: border-color 0.3s;
         }
-
-        input[type="date"]:focus,
-        select:focus {
+        input[type="date"]:focus, select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-
         button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -95,166 +63,73 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 1em;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s;
         }
-
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
-
-        button:active {
-            transform: translateY(0);
-        }
-
         .charts-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 30px;
             margin-bottom: 30px;
         }
-
         .chart-container {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-
-        .chart-container.full-width {
-            grid-column: 1 / -1;
-        }
-
+        .chart-container.full-width { grid-column: 1 / -1; }
         .chart-title {
             font-size: 1.3em;
             font-weight: 600;
             color: #2d3748;
             margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
-
-        .icon {
-            font-size: 1.5em;
-        }
-
-        .chart-wrapper {
-            position: relative;
-            height: 350px;
-        }
-
+        .chart-wrapper { position: relative; height: 350px; }
         .data-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
             background: white;
         }
-
         .data-table th {
             background: #667eea;
             color: white;
             padding: 12px;
             text-align: left;
             font-weight: 600;
-            border: none;
         }
-
-        .data-table td {
-            padding: 12px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .data-table tr:hover {
-            background: #f7fafc;
-        }
-
-        .positive {
-            color: #22863a;
-            font-weight: 600;
-        }
-
-        .negative {
-            color: #cb2431;
-            font-weight: 600;
-        }
-
-        .metric {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
+        .data-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .data-table tr:hover { background: #f7fafc; }
+        .positive { color: #22863a; font-weight: 600; }
+        .negative { color: #cb2431; font-weight: 600; }
         .loading {
             text-align: center;
             padding: 40px;
             color: #718096;
-            font-size: 1.1em;
         }
-
         .spinner {
             border: 4px solid #e2e8f0;
             border-top: 4px solid #667eea;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
             margin: 0 auto 20px;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
         .timestamp {
             text-align: center;
             color: #a0aec0;
             font-size: 0.9em;
             margin-top: 20px;
         }
-
-        .correlation-badge {
-            display: inline-block;
-            background: #edf2f7;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9em;
-            margin: 5px 5px 5px 0;
-        }
-
-        .correlation-badge.high {
-            background: #c6f6d5;
-            color: #22543d;
-        }
-
-        .correlation-badge.medium {
-            background: #fed7d7;
-            color: #742a2a;
-        }
-
-        @media (max-width: 1024px) {
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-            h1 {
-                font-size: 1.8em;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                padding: 15px;
-            }
-            .filters {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .filter-group {
-                width: 100%;
-            }
-        }
-
         .insights {
             background: #edf2f7;
             border-left: 4px solid #667eea;
@@ -262,15 +137,11 @@
             border-radius: 6px;
             margin-bottom: 20px;
         }
-
-        .insights h3 {
-            color: #2d3748;
-            margin-bottom: 10px;
-        }
-
-        .insights p {
-            color: #4a5568;
-            line-height: 1.6;
+        .insights h3 { color: #2d3748; margin-bottom: 10px; }
+        .insights p { color: #4a5568; line-height: 1.6; }
+        @media (max-width: 1024px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8em; }
         }
     </style>
 </head>
@@ -283,22 +154,22 @@
 
         <div class="filters">
             <div class="filter-group">
+                <label for="timeframe">Time Period</label>
+                <select id="timeframe" onchange="updateDateRange()">
+                    <option value="30">Last 30 Days</option>
+                    <option value="90" selected>Last 90 Days</option>
+                    <option value="180">Last 6 Months</option>
+                    <option value="365">Last 1 Year</option>
+                    <option value="all">All Time (2023-Present)</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <label for="startDate">Start Date</label>
                 <input type="date" id="startDate" value="2024-01-01">
             </div>
             <div class="filter-group">
                 <label for="endDate">End Date</label>
                 <input type="date" id="endDate">
-            </div>
-            <div class="filter-group">
-                <label for="timeframe">Quick Select</label>
-                <select id="timeframe">
-                    <option value="">Custom</option>
-                    <option value="30">Last 30 Days</option>
-                    <option value="90">Last 90 Days</option>
-                    <option value="180">Last 6 Months</option>
-                    <option value="365">Last 1 Year</option>
-                </select>
             </div>
             <button onclick="loadData()" style="margin-top: 24px;">📊 Load Data</button>
         </div>
@@ -310,43 +181,43 @@
 
         <div class="charts-grid">
             <div class="chart-container">
-                <h3 class="chart-title"><span class="icon">📈</span>Daily Views (Tips Music)</h3>
+                <h3 class="chart-title">📈 Daily Views (Tips Music)</h3>
                 <div class="chart-wrapper">
                     <canvas id="dailyViewsChart"></canvas>
                 </div>
             </div>
 
             <div class="chart-container">
-                <h3 class="chart-title"><span class="icon">💹</span>Stock Price (TIPSMUSIC)</h3>
+                <h3 class="chart-title">💹 Stock Price (TIPSMUSIC)</h3>
                 <div class="chart-wrapper">
                     <canvas id="stockPriceChart"></canvas>
                 </div>
             </div>
 
             <div class="chart-container full-width">
-                <h3 class="chart-title"><span class="icon">🔗</span>Views vs Stock Price (Dual-Axis)</h3>
+                <h3 class="chart-title">🔗 Views vs Stock Price (Dual-Axis Correlation)</h3>
                 <div class="chart-wrapper">
                     <canvas id="correlationChart"></canvas>
                 </div>
             </div>
 
             <div class="chart-container full-width">
-                <h3 class="chart-title"><span class="icon">📊</span>Moving Averages (Stock Price)</h3>
+                <h3 class="chart-title">📊 Stock Price with Moving Averages</h3>
                 <div class="chart-wrapper">
                     <canvas id="maChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <h3 class="chart-title" style="margin-top: 30px;"><span class="icon">📋</span>Performance Summary</h3>
+        <h3 class="chart-title" style="margin-top: 30px;">📋 Performance Summary</h3>
         <table class="data-table">
             <thead>
                 <tr>
                     <th>Label</th>
-                    <th>Total Views (M)</th>
+                    <th>Total Views</th>
                     <th>Daily Views</th>
-                    <th>Growth %</th>
-                    <th>Subscribers (M)</th>
+                    <th>Daily Growth %</th>
+                    <th>Subscribers</th>
                     <th>Daily Change</th>
                 </tr>
             </thead>
@@ -354,15 +225,18 @@
                 <tr>
                     <td colspan="6" class="loading">
                         <div class="spinner"></div>
-                        Loading data...
+                        Loading data from Supabase...
                     </td>
                 </tr>
             </tbody>
         </table>
 
-        <h3 class="chart-title" style="margin-top: 30px;"><span class="icon">🔍</span>Correlation Analysis</h3>
+        <h3 class="chart-title" style="margin-top: 30px;">🔍 Correlation Analysis</h3>
         <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-            <p id="correlationText" style="color: #4a5568; line-height: 1.8;">Loading correlation analysis...</p>
+            <p id="correlationText" style="color: #4a5568; line-height: 1.8;">
+                <div class="spinner" style="width: 30px; height: 30px;"></div>
+                Loading correlation analysis...
+            </p>
         </div>
 
         <div class="timestamp">
@@ -371,15 +245,14 @@
     </div>
 
     <script>
-        // ============ CONFIGURATION ============
         const SUPABASE_URL = 'https://bfafqccvzboyfjewzvhk.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmYWZxY2N2emJveWZqZXd6dmhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2OTM4NzUsImV4cCI6MjA4MzI2OTg3NX0.OoyXHxHxAvSiE28NG3fz-S5QXcKz6OwspLrb9mSGH2Q';
 
         const charts = {};
         let allData = {};
 
-        // ============ UTILITY FUNCTIONS ============
         function formatNumber(num) {
+            if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
             if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
             if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
             return num.toFixed(0);
@@ -389,6 +262,21 @@
             const num = parseFloat(val);
             const prefix = num >= 0 ? '+' : '';
             return prefix + num.toFixed(2) + '%';
+        }
+
+        function updateDateRange() {
+            const timeframe = document.getElementById('timeframe').value;
+            const endDate = new Date();
+            const startDate = new Date();
+
+            if (timeframe === 'all') {
+                startDate.setFullYear(2023, 0, 1);
+            } else {
+                startDate.setDate(endDate.getDate() - parseInt(timeframe));
+            }
+
+            document.getElementById('startDate').valueAsDate = startDate;
+            document.getElementById('endDate').valueAsDate = endDate;
         }
 
         async function fetchSupabase(view, filters = {}, orderBy = null, limit = 1000) {
@@ -415,43 +303,17 @@
             }
         }
 
-        function getDateRange() {
-            const timeframe = document.getElementById('timeframe').value;
-            const endDate = new Date();
-            const startDate = new Date();
-
-            if (timeframe) {
-                startDate.setDate(endDate.getDate() - parseInt(timeframe));
-                document.getElementById('startDate').valueAsDate = startDate;
-                document.getElementById('endDate').valueAsDate = endDate;
-            }
-
-            return {
-                start: document.getElementById('startDate').value,
-                end: document.getElementById('endDate').value
-            };
-        }
-
-        // ============ DATA LOADING ============
         async function loadData() {
-            const { start, end } = getDateRange();
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
             
             try {
-                // Load Tips daily data
                 const tipsDaily = await fetchSupabase('unified_analysis', 
-                    { label: 'Tips' }, 
+                    {}, 
                     'date.desc', 
                     1000
                 );
                 
-                // Load stock prices
-                const stockPrices = await fetchSupabase('stock_prices',
-                    {},
-                    'date.desc',
-                    1000
-                );
-
-                // Load summary
                 const tipsSummary = await fetchSupabase('daily_label_totals',
                     { label: 'Tips' },
                     'date.desc',
@@ -464,13 +326,12 @@
                     100
                 );
 
-                allData = {
-                    tipsDaily,
-                    stockPrices,
-                    tipsSummary,
-                    saregamaSummary,
-                    dateRange: { start, end }
-                };
+                if (!tipsDaily || tipsDaily.length === 0) {
+                    alert('No data available. Please check Supabase connection.');
+                    return;
+                }
+
+                allData = { tipsDaily, tipsSummary, saregamaSummary };
 
                 updateCharts();
                 updateSummaryTable();
@@ -485,21 +346,16 @@
             }
         }
 
-        // ============ CHART UPDATES ============
         function updateCharts() {
-            const { tipsDaily, stockPrices } = allData;
+            const { tipsDaily } = allData;
             
-            if (!tipsDaily || tipsDaily.length === 0) {
-                alert('No Tips data available');
-                return;
-            }
+            if (!tipsDaily || tipsDaily.length === 0) return;
 
-            const filteredData = tipsDaily.slice(0, 90).reverse(); // Last 90 days
+            const filteredData = tipsDaily.slice(0, 90).reverse();
             const dates = filteredData.map(d => d.date);
             const views = filteredData.map(d => d.tips_views || 0);
             const prices = filteredData.map(d => d.stock_price || 0);
 
-            // Chart 1: Daily Views
             if (charts.dailyViews) charts.dailyViews.destroy();
             charts.dailyViews = new Chart(document.getElementById('dailyViewsChart'), {
                 type: 'line',
@@ -512,17 +368,13 @@
                         backgroundColor: 'rgba(102, 126, 234, 0.1)',
                         tension: 0.4,
                         fill: true,
-                        pointRadius: 3,
-                        pointBackgroundColor: '#667eea',
                         borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: true, position: 'top' }
-                    },
+                    plugins: { legend: { display: true } },
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -532,7 +384,6 @@
                 }
             });
 
-            // Chart 2: Stock Price
             if (charts.stockPrice) charts.stockPrice.destroy();
             charts.stockPrice = new Chart(document.getElementById('stockPriceChart'), {
                 type: 'line',
@@ -545,17 +396,13 @@
                         backgroundColor: 'rgba(118, 75, 162, 0.1)',
                         tension: 0.4,
                         fill: true,
-                        pointRadius: 3,
-                        pointBackgroundColor: '#764ba2',
                         borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: true, position: 'top' }
-                    },
+                    plugins: { legend: { display: true } },
                     scales: {
                         y: {
                             beginAtZero: false,
@@ -565,7 +412,6 @@
                 }
             });
 
-            // Chart 3: Correlation (Dual-Axis)
             if (charts.correlation) charts.correlation.destroy();
             charts.correlation = new Chart(document.getElementById('correlationChart'), {
                 type: 'line',
@@ -578,7 +424,6 @@
                             borderColor: '#667eea',
                             backgroundColor: 'rgba(102, 126, 234, 0.1)',
                             tension: 0.4,
-                            fill: true,
                             yAxisID: 'y',
                             borderWidth: 2
                         },
@@ -588,7 +433,6 @@
                             borderColor: '#764ba2',
                             backgroundColor: 'rgba(118, 75, 162, 0.1)',
                             tension: 0.4,
-                            fill: true,
                             yAxisID: 'y1',
                             borderWidth: 2
                         }
@@ -598,9 +442,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { display: true, position: 'top' }
-                    },
+                    plugins: { legend: { display: true } },
                     scales: {
                         y: {
                             type: 'linear',
@@ -617,7 +459,6 @@
                 }
             });
 
-            // Chart 4: Moving Averages
             const sma7 = calculateSMA(prices, 7);
             const sma30 = calculateSMA(prices, 30);
             
@@ -632,7 +473,6 @@
                             data: prices,
                             borderColor: '#764ba2',
                             borderWidth: 2,
-                            fill: false,
                             pointRadius: 2,
                             tension: 0.4
                         },
@@ -641,7 +481,6 @@
                             data: sma7,
                             borderColor: '#f6ad55',
                             borderWidth: 2,
-                            fill: false,
                             tension: 0.4,
                             pointRadius: 0
                         },
@@ -650,7 +489,6 @@
                             data: sma30,
                             borderColor: '#fc8181',
                             borderWidth: 2,
-                            fill: false,
                             tension: 0.4,
                             pointRadius: 0
                         }
@@ -659,13 +497,9 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: true, position: 'top' }
-                    },
+                    plugins: { legend: { display: true } },
                     scales: {
-                        y: {
-                            ticks: { callback: v => '₹' + v }
-                        }
+                        y: { ticks: { callback: v => '₹' + v } }
                     }
                 }
             });
@@ -689,8 +523,8 @@
             const { tipsSummary, saregamaSummary } = allData;
             if (!tipsSummary || tipsSummary.length === 0) return;
 
-            const tipsLatest = tipsSummary;
-            const saregamaLatest = saregamaSummary;
+            const tipsLatest = tipsSummary[0];
+            const saregamaLatest = saregamaSummary[0];
 
             const html = `
                 <tr>
@@ -698,7 +532,7 @@
                     <td>${formatNumber(tipsLatest.total_views)}</td>
                     <td>${formatNumber(tipsLatest.daily_views || 0)}</td>
                     <td><span class="metric ${tipsLatest.daily_views > 0 ? 'positive' : 'negative'}">
-                        ${formatPercent((tipsLatest.daily_views / (tipsLatest.total_views / 365)) * 100)}
+                        ${formatPercent((tipsLatest.daily_views / tipsLatest.total_views) * 100 * 365)}
                     </span></td>
                     <td>${formatNumber(tipsLatest.total_subscribers)}</td>
                     <td><span class="metric ${tipsLatest.daily_subs > 0 ? 'positive' : 'negative'}">
@@ -710,7 +544,7 @@
                     <td>${formatNumber(saregamaLatest.total_views)}</td>
                     <td>${formatNumber(saregamaLatest.daily_views || 0)}</td>
                     <td><span class="metric ${saregamaLatest.daily_views > 0 ? 'positive' : 'negative'}">
-                        ${formatPercent((saregamaLatest.daily_views / (saregamaLatest.total_views / 365)) * 100)}
+                        ${formatPercent((saregamaLatest.daily_views / saregamaLatest.total_views) * 100 * 365)}
                     </span></td>
                     <td>${formatNumber(saregamaLatest.total_subscribers)}</td>
                     <td><span class="metric ${saregamaLatest.daily_subs > 0 ? 'positive' : 'negative'}">
@@ -755,32 +589,32 @@
 
             document.getElementById('insightText').innerHTML = `
                 <strong>Tips Music:</strong> Views and stock price show a <strong>${strength}</strong> correlation 
-                (r = ${correlation.toFixed(3)}) over the selected period. 
-                <span class="correlation-badge ${Math.abs(correlation) > 0.6 ? 'high' : 'medium'}">
-                    Pearson r = ${correlation.toFixed(3)}
-                </span>
+                (Pearson r = ${correlation.toFixed(3)}) over the last 90 days.
             `;
             document.getElementById('insights').style.display = 'block';
 
             const analysisText = `
-                <h4>📊 Correlation Summary (Last 90 Days)</h4>
+                <h4 style="color: #2d3748; margin-bottom: 10px;">📊 Correlation Summary (Last 90 Days)</h4>
                 <ul style="color: #4a5568; line-height: 2;">
-                    <li><strong>Pearson Correlation (Views vs Price):</strong> ${correlation.toFixed(3)} (${strength})</li>
+                    <li><strong>Pearson Correlation:</strong> ${correlation.toFixed(3)} (${strength})</li>
                     <li><strong>Interpretation:</strong> ${correlation > 0 ? 
                         'Positive correlation - higher views tend to coincide with higher stock prices' :
                         'Negative correlation - higher views tend to coincide with lower stock prices'}</li>
-                    <li><strong>Statistical Significance:</strong> Correlation analysis on ${data.length} data points</li>
-                    <li><strong>Next Steps:</strong> Test different lag periods (7, 14, 30 days) to identify leading indicators</li>
+                    <li><strong>Data Points:</strong> ${data.length} days analyzed</li>
+                    <li><strong>Recommendation:</strong> ${Math.abs(correlation) > 0.5 ? 
+                        'Strong correlation detected - consider further analysis for trading signals' :
+                        'Weak correlation - views may not be a strong leading indicator for stock price'}</li>
                 </ul>
             `;
             document.getElementById('correlationText').innerHTML = analysisText;
         }
 
-        // ============ INITIALIZATION ============
         document.getElementById('endDate').valueAsDate = new Date();
-        document.getElementById('startDate').value = '2024-01-01';
+        updateDateRange();
         
-        loadData();
+        window.addEventListener('load', () => {
+            loadData();
+        });
     </script>
 </body>
 </html>
