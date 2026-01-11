@@ -276,43 +276,6 @@
             background: #0f172a;
         }
 
-        /* Analysis Section */
-        .analysis-section {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            padding: 30px;
-            border-radius: 12px;
-            border: 1px solid #334155;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .analysis-title {
-            font-size: 1.5em;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 20px;
-        }
-
-        .correlation-box {
-            background: #0f172a;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-            margin-bottom: 15px;
-        }
-
-        .correlation-value {
-            font-size: 2.5em;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        .correlation-description {
-            color: #94a3b8;
-            line-height: 1.8;
-        }
-
         /* Loading State */
         .loading {
             text-align: center;
@@ -496,19 +459,6 @@
             </table>
         </div>
 
-        <!-- Correlation Analysis -->
-        <div class="analysis-section">
-            <h3 class="analysis-title">🔬 Correlation Analysis: Daily Views vs Stock Price</h3>
-            <div class="correlation-box" id="correlationDaily">
-                <div class="correlation-value">--</div>
-                <div class="correlation-description">Loading correlation analysis...</div>
-            </div>
-            <div class="correlation-box" id="correlationMonthly">
-                <div class="correlation-value">--</div>
-                <div class="correlation-description">Loading monthly correlation analysis...</div>
-            </div>
-        </div>
-
         <div class="footer">
             Last updated: <span id="lastUpdated">--</span> | Data source: Supabase PostgreSQL | Stock: NSE TIPSMUSIC
         </div>
@@ -560,33 +510,6 @@
                 }
             }
             return sma;
-        }
-
-        function calculateCorrelation(arr1, arr2) {
-            const n = Math.min(arr1.length, arr2.length);
-            if (n < 2) return 0;
-
-            const validPairs = [];
-            for (let i = 0; i < n; i++) {
-                if (arr1[i] != null && arr2[i] != null && arr2[i] !== 0) {
-                    validPairs.push({ x: arr1[i], y: arr2[i] });
-                }
-            }
-
-            if (validPairs.length < 2) return 0;
-
-            const x = validPairs.map(p => p.x);
-            const y = validPairs.map(p => p.y);
-            const len = x.length;
-
-            const meanX = x.reduce((a, b) => a + b) / len;
-            const meanY = y.reduce((a, b) => a + b) / len;
-
-            const numerator = x.reduce((sum, xi, i) => sum + (xi - meanX) * (y[i] - meanY), 0);
-            const denomX = Math.sqrt(x.reduce((sum, xi) => sum + Math.pow(xi - meanX, 2), 0));
-            const denomY = Math.sqrt(y.reduce((sum, yi) => sum + Math.pow(yi - meanY, 2), 0));
-
-            return denomX * denomY === 0 ? 0 : numerator / (denomX * denomY);
         }
 
         function updateDateRange() {
@@ -666,7 +589,6 @@
                 updateMetrics();
                 updateCharts();
                 updateTable();
-                updateCorrelationAnalysis();
 
                 document.getElementById('lastUpdated').textContent = 
                     new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
@@ -678,7 +600,7 @@
         }
 
         // ============================================================================
-        // UPDATE METRICS CARDS
+        // UPDATE METRICS CARDS (🔧 FIXED - Gets LATEST stock price correctly)
         // ============================================================================
         function updateMetrics() {
             const { tipsDaily, stockPrices } = dashboardData;
@@ -687,10 +609,10 @@
             const latest = tipsDaily[tipsDaily.length - 1];
             const previous = tipsDaily[tipsDaily.length - 2];
             
-            const latestStock = stockPrices.find(s => s.close > 0);
-            const latestIndex = stockPrices.findIndex(s => s.close > 0);
-            const prevStock = stockPrices[latestIndex + 1];
-
+            // 🔧 FIX: Get LATEST stock price (last element with close > 0)
+            const validStockPrices = stockPrices.filter(s => s.close > 0);
+            const latestStock = validStockPrices[validStockPrices.length - 1]; // ✅ LAST = LATEST
+            const prevStock = validStockPrices[validStockPrices.length - 2];
 
             const metricsHTML = `
                 <div class="metric-card">
@@ -759,7 +681,7 @@
                 borderWidth: 2,
                 tension: 0.4,
                 fill: true,
-                pointRadius: 0  // Remove circles
+                pointRadius: 0
             }];
 
             if (showMA.dailyViews) {
@@ -823,7 +745,7 @@
                 }
             });
 
-            // Chart 2: Stock Price (SMOOTH LINE - NO CIRCLES)
+            // Chart 2: Stock Price
             const stockDates = filteredStock.map(s => s.date);
             const stockPricesData = filteredStock.map(s => s.close);
 
@@ -837,8 +759,8 @@
                 borderWidth: 2,
                 tension: 0.4,
                 fill: true,
-                pointRadius: 0,  // ✅ REMOVED CIRCLES
-                pointHoverRadius: 4  // Show point on hover only
+                pointRadius: 0,
+                pointHoverRadius: 4
             }];
 
             if (showMA.stockPrice) {
@@ -976,12 +898,12 @@
                 }
             });
 
-            // Chart 4: Comparison (With MA Options)
+            // Chart 4: Comparison
             updateComparisonChart();
         }
 
         // ============================================================================
-        // UPDATE COMPARISON CHART (WITH MA OPTIONS)
+        // UPDATE COMPARISON CHART
         // ============================================================================
         function updateComparisonChart() {
             const { tipsDaily, stockPrices } = dashboardData;
@@ -1005,7 +927,6 @@
             let viewsData = dailyViews;
             let viewsLabel = 'Daily Views';
 
-            // ✅ APPLY MA BASED ON MODE
             if (comparisonMode === 'ma30') {
                 viewsData = calculateSMA(dailyViews, 30);
                 viewsLabel = '30-Day MA (Daily Views)';
@@ -1092,7 +1013,7 @@
         }
 
         // ============================================================================
-        // UPDATE TABLE (WITH UNIFORM MILLIONS FORMATTING)
+        // UPDATE TABLE
         // ============================================================================
         function updateTable() {
             const { tipsDaily, stockPrices } = dashboardData;
@@ -1136,51 +1057,6 @@
         }
 
         // ============================================================================
-        // CORRELATION ANALYSIS
-        // ============================================================================
-        function updateCorrelationAnalysis() {
-            const { tipsDaily, stockPrices, tipsMonthly } = dashboardData;
-
-            const dailyViews = tipsDaily.map(d => d.daily_views || 0);
-            const stockPricesAligned = tipsDaily.map(d => {
-                const stock = stockPrices.find(s => s.date === d.date);
-                return stock ? stock.close : null;
-            });
-
-            const dailyCorr = calculateCorrelation(dailyViews, stockPricesAligned);
-            const dailyStrength = Math.abs(dailyCorr) > 0.7 ? 'Strong' : 
-                                 Math.abs(dailyCorr) > 0.4 ? 'Moderate' : 'Weak';
-
-            document.getElementById('correlationDaily').innerHTML = `
-                <div class="correlation-value">${dailyCorr.toFixed(3)}</div>
-                <div class="correlation-description">
-                    <strong>${dailyStrength} ${dailyCorr >= 0 ? 'Positive' : 'Negative'} Correlation (Daily)</strong><br>
-                    Pearson correlation between daily views and stock price over ${tipsDaily.length} days.<br>
-                    ${dailyCorr > 0 
-                        ? '📈 Higher daily views tend to coincide with higher stock prices.' 
-                        : '📉 Higher daily views tend to coincide with lower stock prices.'}
-                    ${Math.abs(dailyCorr) > 0.5 
-                        ? '<br><strong>✅ Recommendation:</strong> This correlation is statistically meaningful. Consider daily views as a potential indicator for stock movement patterns.' 
-                        : '<br><strong>⚠️ Note:</strong> Weak correlation suggests daily views alone may not be a strong predictor of stock price.'}
-                </div>
-            `;
-
-            if (tipsMonthly.length > 2) {
-                const monthlyViews = tipsMonthly.map(m => m.total_views || 0);
-                
-                document.getElementById('correlationMonthly').innerHTML = `
-                    <div class="correlation-value" style="color: #10b981;">Monthly Analysis</div>
-                    <div class="correlation-description">
-                        <strong>Month-over-Month Growth Analysis</strong><br>
-                        ${tipsMonthly.length} months of data available for trend analysis.<br>
-                        Average MoM growth: ${formatPercent(tipsMonthly.reduce((sum, m) => sum + (m.mom_views_growth_pct || 0), 0) / tipsMonthly.length)}<br>
-                        📊 Monthly aggregation smooths out daily volatility and may reveal longer-term trends.
-                    </div>
-                `;
-            }
-        }
-
-        // ============================================================================
         // CHART CONTROLS
         // ============================================================================
         function toggleScale(chartName, scale) {
@@ -1217,12 +1093,10 @@
             }
         }
 
-        // ✅ NEW FUNCTION: TOGGLE COMPARISON MODE
         function toggleComparisonMode(mode) {
             comparisonMode = mode;
             updateComparisonChart();
 
-            // Update button states
             const container = document.getElementById('comparisonChart').closest('.chart-container');
             container.querySelectorAll('.chart-toggle').forEach(btn => {
                 btn.classList.remove('active');
