@@ -688,7 +688,9 @@
             const previous = tipsDaily[tipsDaily.length - 2];
             
             const latestStock = stockPrices.find(s => s.close > 0);
-            const prevStock = stockPrices[stockPrices.length - 2];
+            const latestIndex = stockPrices.findIndex(s => s.close > 0);
+            const prevStock = stockPrices[latestIndex + 1];
+
 
             const metricsHTML = `
                 <div class="metric-card">
