@@ -293,7 +293,7 @@
             margin-bottom: 20px;
         }
 
-        .correlation-box {
+        .insight-box {
             background: #0f172a;
             padding: 20px;
             border-radius: 8px;
@@ -301,16 +301,24 @@
             margin-bottom: 15px;
         }
 
-        .correlation-value {
+        .insight-value {
             font-size: 2.5em;
             font-weight: 700;
             color: #667eea;
             margin-bottom: 10px;
         }
 
-        .correlation-description {
+        .insight-description {
             color: #94a3b8;
             line-height: 1.8;
+        }
+
+        .insight-highlight {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
         }
 
         /* Loading State */
@@ -341,6 +349,27 @@
             color: #64748b;
             padding: 20px;
             font-size: 0.9em;
+        }
+
+        /* Section Headers */
+        .section-header {
+            background: #1e293b;
+            padding: 20px 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section-header h2 {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .section-header p {
+            color: #94a3b8;
+            font-size: 1em;
         }
 
         /* Responsive */
@@ -414,8 +443,14 @@
             </div>
         </div>
 
-        <!-- Daily Views Chart -->
+        <!-- ========== SECTION 1: BASIC CHARTS ========== -->
+        <div class="section-header">
+            <h2>📊 Performance Overview</h2>
+            <p>Daily views, stock price trends, and monthly growth analysis</p>
+        </div>
+
         <div class="charts-grid">
+            <!-- Daily Views Chart -->
             <div class="chart-container">
                 <div class="chart-header">
                     <h3 class="chart-title">📊 Daily Views - Tips Music</h3>
@@ -471,9 +506,75 @@
             </div>
         </div>
 
+        <!-- ========== SECTION 2: ADVANCED ANALYSIS ========== -->
+        <div class="section-header">
+            <h2>🔬 Advanced Analytics</h2>
+            <p>Lag correlation, momentum indicators, and upload frequency impact</p>
+        </div>
+
+        <div class="charts-grid">
+            <!-- Lag Correlation Analysis -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">⏰ Lag Correlation Analysis</h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="lagCorrelationChart"></canvas>
+                </div>
+                <div class="insight-box" id="lagInsight">
+                    <div class="insight-value">--</div>
+                    <div class="insight-description">Loading lag correlation analysis...</div>
+                </div>
+            </div>
+
+            <!-- Momentum Indicators - RSI -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">📈 RSI - Relative Strength Index (Daily Views)</h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="rsiChart"></canvas>
+                </div>
+                <div class="insight-box" id="rsiInsight">
+                    <div class="insight-description">Loading RSI analysis...</div>
+                </div>
+            </div>
+
+            <!-- MACD Indicator -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">📊 MACD - Moving Average Convergence Divergence</h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="macdChart"></canvas>
+                </div>
+                <div class="insight-box" id="macdInsight">
+                    <div class="insight-description">Loading MACD analysis...</div>
+                </div>
+            </div>
+
+            <!-- Upload Frequency Impact -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">🎬 Upload Frequency Impact on Stock Price</h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="uploadFrequencyChart"></canvas>
+                </div>
+                <div class="insight-box" id="uploadInsight">
+                    <div class="insight-value">--</div>
+                    <div class="insight-description">Loading upload frequency analysis...</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Data Table -->
+        <div class="section-header">
+            <h2>📋 Detailed Data Table</h2>
+            <p>Daily views and stock price changes</p>
+        </div>
+
         <div class="table-container">
-            <h3 class="chart-title" style="margin-bottom: 20px;">📋 Daily Views Data - Tips Music</h3>
             <table>
                 <thead>
                     <tr>
@@ -496,19 +597,6 @@
             </table>
         </div>
 
-        <!-- Correlation Analysis -->
-        <div class="analysis-section">
-            <h3 class="analysis-title">🔬 Correlation Analysis: Daily Views vs Stock Price</h3>
-            <div class="correlation-box" id="correlationDaily">
-                <div class="correlation-value">--</div>
-                <div class="correlation-description">Loading correlation analysis...</div>
-            </div>
-            <div class="correlation-box" id="correlationMonthly">
-                <div class="correlation-value">--</div>
-                <div class="correlation-description">Loading monthly correlation analysis...</div>
-            </div>
-        </div>
-
         <div class="footer">
             Last updated: <span id="lastUpdated">--</span> | Data source: Supabase PostgreSQL | Stock: NSE TIPSMUSIC
         </div>
@@ -524,7 +612,7 @@
         const charts = {};
         let dashboardData = {};
         let showMA = { dailyViews: false, stockPrice: false };
-        let comparisonMode = 'raw'; // 'raw', 'ma30', 'ma45'
+        let comparisonMode = 'raw';
 
         // ============================================================================
         // UTILITY FUNCTIONS
@@ -560,6 +648,102 @@
                 }
             }
             return sma;
+        }
+
+        function calculateEMA(data, period) {
+            const ema = [];
+            const multiplier = 2 / (period + 1);
+            
+            // First EMA is SMA
+            let sum = 0;
+            for (let i = 0; i < period; i++) {
+                if (i < data.length) sum += data[i];
+            }
+            ema[period - 1] = sum / period;
+            
+            // Calculate EMA for remaining points
+            for (let i = period; i < data.length; i++) {
+                ema[i] = (data[i] - ema[i - 1]) * multiplier + ema[i - 1];
+            }
+            
+            // Fill initial values with null
+            for (let i = 0; i < period - 1; i++) {
+                ema[i] = null;
+            }
+            
+            return ema;
+        }
+
+        function calculateRSI(data, period = 14) {
+            const rsi = [];
+            const gains = [];
+            const losses = [];
+            
+            // Calculate price changes
+            for (let i = 1; i < data.length; i++) {
+                const change = data[i] - data[i - 1];
+                gains.push(change > 0 ? change : 0);
+                losses.push(change < 0 ? Math.abs(change) : 0);
+            }
+            
+            // Calculate RSI
+            for (let i = 0; i < gains.length; i++) {
+                if (i < period - 1) {
+                    rsi.push(null);
+                } else {
+                    const avgGain = gains.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0) / period;
+                    const avgLoss = losses.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0) / period;
+                    
+                    if (avgLoss === 0) {
+                        rsi.push(100);
+                    } else {
+                        const rs = avgGain / avgLoss;
+                        rsi.push(100 - (100 / (1 + rs)));
+                    }
+                }
+            }
+            
+            rsi.unshift(null); // Add null for first data point
+            return rsi;
+        }
+
+        function calculateMACD(data, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) {
+            const fastEMA = calculateEMA(data, fastPeriod);
+            const slowEMA = calculateEMA(data, slowPeriod);
+            
+            const macdLine = [];
+            for (let i = 0; i < data.length; i++) {
+                if (fastEMA[i] !== null && slowEMA[i] !== null) {
+                    macdLine[i] = fastEMA[i] - slowEMA[i];
+                } else {
+                    macdLine[i] = null;
+                }
+            }
+            
+            const signalLine = calculateEMA(macdLine.filter(v => v !== null), signalPeriod);
+            
+            // Align signal line with macdLine
+            const alignedSignal = [];
+            let signalIndex = 0;
+            for (let i = 0; i < macdLine.length; i++) {
+                if (macdLine[i] !== null) {
+                    alignedSignal[i] = signalLine[signalIndex] || null;
+                    signalIndex++;
+                } else {
+                    alignedSignal[i] = null;
+                }
+            }
+            
+            const histogram = [];
+            for (let i = 0; i < data.length; i++) {
+                if (macdLine[i] !== null && alignedSignal[i] !== null) {
+                    histogram[i] = macdLine[i] - alignedSignal[i];
+                } else {
+                    histogram[i] = null;
+                }
+            }
+            
+            return { macdLine, signalLine: alignedSignal, histogram };
         }
 
         function calculateCorrelation(arr1, arr2) {
@@ -645,6 +829,9 @@
                 const tipsDaily = await fetchSupabase('daily_label_totals', { label: 'Tips' }, 'date.desc', 2000);
                 const stockPrices = await fetchSupabase('stock_prices', { symbol: 'TIPSMUSIC' }, 'date.desc', 2000);
                 const tipsMonthly = await fetchSupabase('monthly_label_totals', { label: 'Tips' }, 'month.desc', 100);
+                
+                // Fetch upload metrics
+                const uploadMetrics = await fetchSupabase('upload_metrics', { label: 'Tips' }, 'date.desc', 2000);
 
                 if (tipsDaily.length === 0) {
                     alert('❌ No data found in daily_label_totals table for Tips. Please check your database.');
@@ -654,19 +841,21 @@
                 console.log('✅ Data loaded:', {
                     daily: tipsDaily.length,
                     stock: stockPrices.length,
-                    monthly: tipsMonthly.length
+                    monthly: tipsMonthly.length,
+                    uploads: uploadMetrics.length
                 });
 
                 dashboardData = {
                     tipsDaily: tipsDaily.reverse(),
                     stockPrices: stockPrices.reverse(),
-                    tipsMonthly: tipsMonthly.reverse()
+                    tipsMonthly: tipsMonthly.reverse(),
+                    uploadMetrics: uploadMetrics.reverse()
                 };
 
                 updateMetrics();
                 updateCharts();
+                updateAdvancedAnalytics();
                 updateTable();
-                updateCorrelationAnalysis();
 
                 document.getElementById('lastUpdated').textContent = 
                     new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
@@ -725,7 +914,7 @@
         }
 
         // ============================================================================
-        // UPDATE CHARTS
+        // UPDATE BASIC CHARTS
         // ============================================================================
         function updateCharts() {
             const { tipsDaily, stockPrices, tipsMonthly } = dashboardData;
@@ -757,7 +946,7 @@
                 borderWidth: 2,
                 tension: 0.4,
                 fill: true,
-                pointRadius: 0  // Remove circles
+                pointRadius: 0
             }];
 
             if (showMA.dailyViews) {
@@ -821,7 +1010,7 @@
                 }
             });
 
-            // Chart 2: Stock Price (SMOOTH LINE - NO CIRCLES)
+            // Chart 2: Stock Price
             const stockDates = filteredStock.map(s => s.date);
             const stockPricesData = filteredStock.map(s => s.close);
 
@@ -835,8 +1024,8 @@
                 borderWidth: 2,
                 tension: 0.4,
                 fill: true,
-                pointRadius: 0,  // ✅ REMOVED CIRCLES
-                pointHoverRadius: 4  // Show point on hover only
+                pointRadius: 0,
+                pointHoverRadius: 4
             }];
 
             if (showMA.stockPrice) {
@@ -974,13 +1163,10 @@
                 }
             });
 
-            // Chart 4: Comparison (With MA Options)
+            // Chart 4: Comparison
             updateComparisonChart();
         }
 
-        // ============================================================================
-        // UPDATE COMPARISON CHART (WITH MA OPTIONS)
-        // ============================================================================
         function updateComparisonChart() {
             const { tipsDaily, stockPrices } = dashboardData;
             
@@ -1003,7 +1189,6 @@
             let viewsData = dailyViews;
             let viewsLabel = 'Daily Views';
 
-            // ✅ APPLY MA BASED ON MODE
             if (comparisonMode === 'ma30') {
                 viewsData = calculateSMA(dailyViews, 30);
                 viewsLabel = '30-Day MA (Daily Views)';
@@ -1090,7 +1275,480 @@
         }
 
         // ============================================================================
-        // UPDATE TABLE (WITH UNIFORM MILLIONS FORMATTING)
+        // ADVANCED ANALYTICS
+        // ============================================================================
+        function updateAdvancedAnalytics() {
+            updateLagCorrelation();
+            updateRSI();
+            updateMACD();
+            updateUploadFrequency();
+        }
+
+        // LAG CORRELATION ANALYSIS
+        function updateLagCorrelation() {
+            const { tipsDaily, stockPrices } = dashboardData;
+            
+            const dailyViews = tipsDaily.map(d => d.daily_views || 0);
+            const stockPricesAligned = tipsDaily.map(d => {
+                const stock = stockPrices.find(s => s.date === d.date);
+                return stock ? stock.close : null;
+            });
+
+            // Calculate correlation at different lags (0 to 30 days)
+            const maxLag = 30;
+            const lagCorrelations = [];
+            const lagLabels = [];
+
+            for (let lag = 0; lag <= maxLag; lag++) {
+                const laggedViews = dailyViews.slice(0, dailyViews.length - lag);
+                const futureStock = stockPricesAligned.slice(lag);
+                
+                const corr = calculateCorrelation(laggedViews, futureStock);
+                lagCorrelations.push(corr);
+                lagLabels.push(`${lag}d`);
+            }
+
+            // Find best lag
+            const maxCorr = Math.max(...lagCorrelations.map(Math.abs));
+            const bestLagIndex = lagCorrelations.findIndex(c => Math.abs(c) === maxCorr);
+            const bestLag = bestLagIndex;
+            const bestCorrValue = lagCorrelations[bestLagIndex];
+
+            if (charts.lagCorrelation) charts.lagCorrelation.destroy();
+
+            charts.lagCorrelation = new Chart(document.getElementById('lagCorrelationChart'), {
+                type: 'line',
+                data: {
+                    labels: lagLabels,
+                    datasets: [{
+                        label: 'Correlation Coefficient',
+                        data: lagCorrelations,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: lagCorrelations.map((c, i) => 
+                            i === bestLagIndex ? '#10b981' : '#667eea'
+                        ),
+                        pointRadius: lagCorrelations.map((c, i) => 
+                            i === bestLagIndex ? 8 : 3
+                        )
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, labels: { color: '#e2e8f0' } },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `Correlation: ${context.parsed.y.toFixed(3)}`
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: 0,
+                                    yMax: 0,
+                                    borderColor: '#94a3b8',
+                                    borderWidth: 1,
+                                    borderDash: [5, 5]
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Lag (Days)', color: '#94a3b8' },
+                            ticks: { color: '#94a3b8' }, 
+                            grid: { color: '#334155' } 
+                        },
+                        y: {
+                            title: { display: true, text: 'Correlation', color: '#94a3b8' },
+                            min: -1,
+                            max: 1,
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        }
+                    }
+                }
+            });
+
+            // Update insight
+            const strength = Math.abs(bestCorrValue) > 0.7 ? 'Strong' : 
+                           Math.abs(bestCorrValue) > 0.4 ? 'Moderate' : 'Weak';
+            
+            document.getElementById('lagInsight').innerHTML = `
+                <div class="insight-value">${bestLag} Days</div>
+                <div class="insight-description">
+                    <strong>🎯 Best Leading Indicator:</strong> Views from <span class="insight-highlight">${bestLag} days ago</span> 
+                    show the strongest correlation with today's stock price.<br><br>
+                    <strong>Correlation Strength:</strong> ${bestCorrValue.toFixed(3)} (${strength} ${bestCorrValue >= 0 ? 'positive' : 'negative'})<br><br>
+                    ${bestLag > 0 
+                        ? `📊 <strong>Trading Signal:</strong> Monitor daily views. A significant change may predict stock movement in ${bestLag} days.`
+                        : '📊 <strong>Same-day correlation:</strong> Views and stock price move together on the same day.'
+                    }
+                </div>
+            `;
+        }
+
+        // RSI ANALYSIS
+        function updateRSI() {
+            const { tipsDaily } = dashboardData;
+            
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+
+            const filteredDaily = tipsDaily.filter(d => {
+                const date = new Date(d.date);
+                return date >= startDate && date <= endDate;
+            });
+
+            const dates = filteredDaily.map(d => d.date);
+            const dailyViews = filteredDaily.map(d => d.daily_views || 0);
+            const rsi = calculateRSI(dailyViews, 14);
+
+            if (charts.rsi) charts.rsi.destroy();
+
+            charts.rsi = new Chart(document.getElementById('rsiChart'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'RSI (14)',
+                        data: rsi,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, labels: { color: '#e2e8f0' } },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `RSI: ${context.parsed.y?.toFixed(2) || 'N/A'}`
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                overbought: {
+                                    type: 'line',
+                                    yMin: 70,
+                                    yMax: 70,
+                                    borderColor: '#ef4444',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5],
+                                    label: {
+                                        content: 'Overbought (70)',
+                                        enabled: true,
+                                        position: 'end',
+                                        color: '#ef4444'
+                                    }
+                                },
+                                oversold: {
+                                    type: 'line',
+                                    yMin: 30,
+                                    yMax: 30,
+                                    borderColor: '#10b981',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5],
+                                    label: {
+                                        content: 'Oversold (30)',
+                                        enabled: true,
+                                        position: 'end',
+                                        color: '#10b981'
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        }
+                    }
+                }
+            });
+
+            // Update insight
+            const latestRSI = rsi[rsi.length - 1];
+            let rsiStatus = 'Neutral';
+            let rsiColor = '#667eea';
+            let rsiAdvice = 'Views momentum is balanced.';
+
+            if (latestRSI > 70) {
+                rsiStatus = 'Overbought';
+                rsiColor = '#ef4444';
+                rsiAdvice = 'Views may be peaking. Potential reversal ahead.';
+            } else if (latestRSI < 30) {
+                rsiStatus = 'Oversold';
+                rsiColor = '#10b981';
+                rsiAdvice = 'Views may be bottoming. Potential bounce ahead.';
+            }
+
+            document.getElementById('rsiInsight').innerHTML = `
+                <div class="insight-description">
+                    <strong>Current RSI:</strong> <span style="color: ${rsiColor}; font-size: 1.5em; font-weight: 700;">${latestRSI?.toFixed(2) || 'N/A'}</span> 
+                    (${rsiStatus})<br><br>
+                    📊 ${rsiAdvice}<br><br>
+                    <strong>Interpretation:</strong><br>
+                    • RSI > 70 = Overbought (views growing too fast, may slow down)<br>
+                    • RSI < 30 = Oversold (views declining, may recover)<br>
+                    • RSI 30-70 = Neutral (healthy momentum)
+                </div>
+            `;
+        }
+
+        // MACD ANALYSIS
+        function updateMACD() {
+            const { tipsDaily } = dashboardData;
+            
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+
+            const filteredDaily = tipsDaily.filter(d => {
+                const date = new Date(d.date);
+                return date >= startDate && date <= endDate;
+            });
+
+            const dates = filteredDaily.map(d => d.date);
+            const dailyViews = filteredDaily.map(d => d.daily_views || 0);
+            const macd = calculateMACD(dailyViews, 12, 26, 9);
+
+            if (charts.macd) charts.macd.destroy();
+
+            charts.macd = new Chart(document.getElementById('macdChart'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'MACD Line',
+                            data: macd.macdLine,
+                            borderColor: '#667eea',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Signal Line',
+                            data: macd.signalLine,
+                            borderColor: '#ef4444',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Histogram',
+                            data: macd.histogram,
+                            type: 'bar',
+                            backgroundColor: macd.histogram.map(h => h >= 0 ? 'rgba(16, 185, 129, 0.6)' : 'rgba(239, 68, 68, 0.6)'),
+                            borderWidth: 0,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, labels: { color: '#e2e8f0' } },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `${context.dataset.label}: ${context.parsed.y?.toFixed(0) || 'N/A'}`
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                zero: {
+                                    type: 'line',
+                                    yMin: 0,
+                                    yMax: 0,
+                                    borderColor: '#94a3b8',
+                                    borderWidth: 1,
+                                    borderDash: [5, 5]
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        }
+                    }
+                }
+            });
+
+            // Update insight
+            const latestMACD = macd.macdLine[macd.macdLine.length - 1];
+            const latestSignal = macd.signalLine[macd.signalLine.length - 1];
+            const latestHistogram = macd.histogram[macd.histogram.length - 1];
+
+            let macdStatus = 'Neutral';
+            let macdAdvice = 'No clear trend signal.';
+
+            if (latestMACD > latestSignal && latestHistogram > 0) {
+                macdStatus = 'Bullish';
+                macdAdvice = '📈 MACD above signal line. Upward momentum detected.';
+            } else if (latestMACD < latestSignal && latestHistogram < 0) {
+                macdStatus = 'Bearish';
+                macdAdvice = '📉 MACD below signal line. Downward momentum detected.';
+            }
+
+            document.getElementById('macdInsight').innerHTML = `
+                <div class="insight-description">
+                    <strong>Signal:</strong> <span class="insight-highlight">${macdStatus}</span><br><br>
+                    ${macdAdvice}<br><br>
+                    <strong>Current Values:</strong><br>
+                    • MACD Line: ${latestMACD?.toFixed(0) || 'N/A'}<br>
+                    • Signal Line: ${latestSignal?.toFixed(0) || 'N/A'}<br>
+                    • Histogram: ${latestHistogram?.toFixed(0) || 'N/A'}<br><br>
+                    <strong>How to use:</strong><br>
+                    • MACD crosses above signal = Bullish (buy signal)<br>
+                    • MACD crosses below signal = Bearish (sell signal)<br>
+                    • Histogram shows momentum strength
+                </div>
+            `;
+        }
+
+        // UPLOAD FREQUENCY ANALYSIS
+        function updateUploadFrequency() {
+            const { tipsDaily, stockPrices, uploadMetrics } = dashboardData;
+
+            // If upload_metrics table doesn't exist, calculate from daily data
+            let uploadData = [];
+            
+            if (uploadMetrics && uploadMetrics.length > 0) {
+                uploadData = uploadMetrics.map(u => ({
+                    date: u.date,
+                    uploads7d: u.uploads_7d || 0,
+                    uploads30d: u.uploads_30d || 0
+                }));
+            } else {
+                // Fallback: use video count changes from daily data
+                for (let i = 30; i < tipsDaily.length; i++) {
+                    const current = tipsDaily[i];
+                    const prev7 = tipsDaily[i - 7];
+                    const prev30 = tipsDaily[i - 30];
+                    
+                    uploadData.push({
+                        date: current.date,
+                        uploads7d: (current.total_videos || 0) - (prev7.total_videos || 0),
+                        uploads30d: (current.total_videos || 0) - (prev30.total_videos || 0)
+                    });
+                }
+            }
+
+            // Calculate stock price changes
+            const scatterData = uploadData.map(u => {
+                const stock = stockPrices.find(s => s.date === u.date);
+                const stockPrev = stockPrices.find(s => {
+                    const prevDate = new Date(u.date);
+                    prevDate.setDate(prevDate.getDate() - 7);
+                    return s.date === prevDate.toISOString().split('T')[0];
+                });
+                
+                if (!stock || !stockPrev || stockPrev.close === 0) return null;
+                
+                const stockChange = ((stock.close - stockPrev.close) / stockPrev.close) * 100;
+                
+                return {
+                    x: u.uploads7d,
+                    y: stockChange
+                };
+            }).filter(d => d !== null);
+
+            if (charts.uploadFrequency) charts.uploadFrequency.destroy();
+
+            charts.uploadFrequency = new Chart(document.getElementById('uploadFrequencyChart'), {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Upload Impact',
+                        data: scatterData,
+                        backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                        borderColor: '#667eea',
+                        borderWidth: 1,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, labels: { color: '#e2e8f0' } },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    return `Uploads: ${context.parsed.x} | Stock Change: ${context.parsed.y.toFixed(2)}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Videos Uploaded (7 days)', color: '#94a3b8' },
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Stock Price Change (%)', color: '#94a3b8' },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: v => v + '%'
+                            },
+                            grid: { color: '#334155' }
+                        }
+                    }
+                }
+            });
+
+            // Calculate correlation
+            const uploadsOnly = scatterData.map(d => d.x);
+            const stockChangesOnly = scatterData.map(d => d.y);
+            const correlation = calculateCorrelation(uploadsOnly, stockChangesOnly);
+
+            const avgUploads = uploadsOnly.reduce((a, b) => a + b, 0) / uploadsOnly.length;
+            const avgStockChange = stockChangesOnly.reduce((a, b) => a + b, 0) / stockChangesOnly.length;
+
+            document.getElementById('uploadInsight').innerHTML = `
+                <div class="insight-value">${correlation.toFixed(3)}</div>
+                <div class="insight-description">
+                    <strong>Correlation:</strong> Upload frequency vs Stock price change<br><br>
+                    📊 <strong>Analysis:</strong><br>
+                    • Average uploads per week: <span class="insight-highlight">${avgUploads.toFixed(1)}</span><br>
+                    • Average stock change: <span class="insight-highlight">${avgStockChange >= 0 ? '+' : ''}${avgStockChange.toFixed(2)}%</span><br>
+                    • Correlation strength: <span class="insight-highlight">${Math.abs(correlation) > 0.5 ? 'Strong' : Math.abs(correlation) > 0.3 ? 'Moderate' : 'Weak'}</span><br><br>
+                    ${correlation > 0.3 
+                        ? '✅ <strong>Insight:</strong> More uploads tend to drive stock price growth.' 
+                        : correlation < -0.3
+                        ? '⚠️ <strong>Insight:</strong> Higher upload frequency correlates with stock decline (may indicate quality issues).'
+                        : '📊 <strong>Insight:</strong> Weak correlation. Upload frequency alone may not be a strong stock predictor.'
+                    }
+                </div>
+            `;
+        }
+
+        // ============================================================================
+        // UPDATE TABLE
         // ============================================================================
         function updateTable() {
             const { tipsDaily, stockPrices } = dashboardData;
@@ -1134,51 +1792,6 @@
         }
 
         // ============================================================================
-        // CORRELATION ANALYSIS
-        // ============================================================================
-        function updateCorrelationAnalysis() {
-            const { tipsDaily, stockPrices, tipsMonthly } = dashboardData;
-
-            const dailyViews = tipsDaily.map(d => d.daily_views || 0);
-            const stockPricesAligned = tipsDaily.map(d => {
-                const stock = stockPrices.find(s => s.date === d.date);
-                return stock ? stock.close : null;
-            });
-
-            const dailyCorr = calculateCorrelation(dailyViews, stockPricesAligned);
-            const dailyStrength = Math.abs(dailyCorr) > 0.7 ? 'Strong' : 
-                                 Math.abs(dailyCorr) > 0.4 ? 'Moderate' : 'Weak';
-
-            document.getElementById('correlationDaily').innerHTML = `
-                <div class="correlation-value">${dailyCorr.toFixed(3)}</div>
-                <div class="correlation-description">
-                    <strong>${dailyStrength} ${dailyCorr >= 0 ? 'Positive' : 'Negative'} Correlation (Daily)</strong><br>
-                    Pearson correlation between daily views and stock price over ${tipsDaily.length} days.<br>
-                    ${dailyCorr > 0 
-                        ? '📈 Higher daily views tend to coincide with higher stock prices.' 
-                        : '📉 Higher daily views tend to coincide with lower stock prices.'}
-                    ${Math.abs(dailyCorr) > 0.5 
-                        ? '<br><strong>✅ Recommendation:</strong> This correlation is statistically meaningful. Consider daily views as a potential indicator for stock movement patterns.' 
-                        : '<br><strong>⚠️ Note:</strong> Weak correlation suggests daily views alone may not be a strong predictor of stock price.'}
-                </div>
-            `;
-
-            if (tipsMonthly.length > 2) {
-                const monthlyViews = tipsMonthly.map(m => m.total_views || 0);
-                
-                document.getElementById('correlationMonthly').innerHTML = `
-                    <div class="correlation-value" style="color: #10b981;">Monthly Analysis</div>
-                    <div class="correlation-description">
-                        <strong>Month-over-Month Growth Analysis</strong><br>
-                        ${tipsMonthly.length} months of data available for trend analysis.<br>
-                        Average MoM growth: ${formatPercent(tipsMonthly.reduce((sum, m) => sum + (m.mom_views_growth_pct || 0), 0) / tipsMonthly.length)}<br>
-                        📊 Monthly aggregation smooths out daily volatility and may reveal longer-term trends.
-                    </div>
-                `;
-            }
-        }
-
-        // ============================================================================
         // CHART CONTROLS
         // ============================================================================
         function toggleScale(chartName, scale) {
@@ -1215,12 +1828,10 @@
             }
         }
 
-        // ✅ NEW FUNCTION: TOGGLE COMPARISON MODE
         function toggleComparisonMode(mode) {
             comparisonMode = mode;
             updateComparisonChart();
 
-            // Update button states
             const container = document.getElementById('comparisonChart').closest('.chart-container');
             container.querySelectorAll('.chart-toggle').forEach(btn => {
                 btn.classList.remove('active');
