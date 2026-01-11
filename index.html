@@ -276,6 +276,42 @@
             background: #0f172a;
         }
 
+        /* Pagination Controls */
+        .pagination-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+        }
+
+        .pagination-info {
+            color: #94a3b8;
+            font-size: 0.9em;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .pagination-buttons button {
+            padding: 8px 16px;
+            margin: 0;
+            font-size: 0.9em;
+            background: #334155;
+        }
+
+        .pagination-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-buttons button:not(:disabled):hover {
+            background: #667eea;
+        }
+
         /* Loading State */
         .loading {
             text-align: center;
@@ -434,7 +470,7 @@
             </div>
         </div>
 
-        <!-- Data Table -->
+        <!-- Data Table with Pagination -->
         <div class="table-container">
             <h3 class="chart-title" style="margin-bottom: 20px;">📋 Daily Views Data - Tips Music</h3>
             <table>
@@ -457,6 +493,15 @@
                     </tr>
                 </tbody>
             </table>
+            <div class="pagination-controls">
+                <div class="pagination-info" id="paginationInfo">
+                    Showing 0-0 of 0 records
+                </div>
+                <div class="pagination-buttons">
+                    <button onclick="changePage(-1)" id="prevBtn">← Previous</button>
+                    <button onclick="changePage(1)" id="nextBtn">Next →</button>
+                </div>
+            </div>
         </div>
 
         <div class="footer">
@@ -475,6 +520,11 @@
         let dashboardData = {};
         let showMA = { dailyViews: false, stockPrice: false };
         let comparisonMode = 'raw'; // 'raw', 'ma30', 'ma45'
+        
+        // Pagination state
+        let currentPage = 1;
+        const rowsPerPage = 50;
+        let filteredTableData = [];
 
         // ============================================================================
         // UTILITY FUNCTIONS
@@ -600,7 +650,7 @@
         }
 
         // ============================================================================
-        // UPDATE METRICS CARDS (🔧 FIXED - Gets LATEST stock price correctly)
+        // UPDATE METRICS CARDS
         // ============================================================================
         function updateMetrics() {
             const { tipsDaily, stockPrices } = dashboardData;
@@ -609,9 +659,9 @@
             const latest = tipsDaily[tipsDaily.length - 1];
             const previous = tipsDaily[tipsDaily.length - 2];
             
-            // 🔧 FIX: Get LATEST stock price (last element with close > 0)
+            // Get LATEST stock price (last element with close > 0)
             const validStockPrices = stockPrices.filter(s => s.close > 0);
-            const latestStock = validStockPrices[validStockPrices.length - 1]; // ✅ LAST = LATEST
+            const latestStock = validStockPrices[validStockPrices.length - 1];
             const prevStock = validStockPrices[validStockPrices.length - 2];
 
             const metricsHTML = `
@@ -824,7 +874,7 @@
                 }
             });
 
-            // Chart 3: Monthly Growth
+            // Chart 3: Monthly Growth - WITH VISIBLE POINTS
             const months = tipsMonthly.map(m => m.month);
             const monthlyViews = tipsMonthly.map(m => m.total_views);
             const monthlyGrowth = tipsMonthly.map(m => m.mom_views_growth_pct || 0);
@@ -853,7 +903,11 @@
                             borderWidth: 2,
                             tension: 0.4,
                             yAxisID: 'y1',
-                            pointRadius: 0
+                            pointRadius: 4,           // ✅ SHOW POINTS
+                            pointHoverRadius: 6,      // ✅ LARGER ON HOVER
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
                         }
                     ]
                 },
@@ -1013,7 +1067,7 @@
         }
 
         // ============================================================================
-        // UPDATE TABLE
+        // UPDATE TABLE WITH PAGINATION & FORWARD-FILL STOCK PRICES
         // ============================================================================
         function updateTable() {
             const { tipsDaily, stockPrices } = dashboardData;
@@ -1026,7 +1080,11 @@
                 return date >= startDate && date <= endDate;
             }).reverse();
 
-            let html = '';
+            // Build table data with forward-filled stock prices
+            filteredTableData = [];
+            let lastKnownStockPrice = null;
+            let lastKnownStockDate = null;
+
             filteredDaily.forEach((row, i) => {
                 const prevRow = filteredDaily[i + 1];
                 const change = prevRow ? row.daily_views - prevRow.daily_views : 0;
@@ -1034,26 +1092,87 @@
                     ? ((row.daily_views - prevRow.daily_views) / prevRow.daily_views) * 100 
                     : 0;
 
-                const stock = stockPrices.find(s => s.date === row.date);
+                // Find stock for this date
+                let stock = stockPrices.find(s => s.date === row.date);
+                
+                // If stock exists and has valid price, update last known
+                if (stock && stock.close > 0) {
+                    lastKnownStockPrice = stock.close;
+                    lastKnownStockDate = stock.date;
+                }
+
+                // Use current stock or forward-fill from last known
+                const displayStockPrice = stock && stock.close > 0 ? stock.close : lastKnownStockPrice;
+                const isForwardFilled = (!stock || stock.close === 0) && lastKnownStockPrice;
+
                 const prevStock = stockPrices.find(s => s.date === prevRow?.date);
-                const stockChange = stock && prevStock ? stock.close - prevStock.close : 0;
+                const stockChange = stock && prevStock && stock.close > 0 && prevStock.close > 0 
+                    ? stock.close - prevStock.close 
+                    : 0;
 
                 const changeClass = change >= 0 ? 'positive' : 'negative';
                 const stockChangeClass = stockChange >= 0 ? 'positive' : 'negative';
 
+                filteredTableData.push({
+                    date: row.date,
+                    dailyViews: row.daily_views,
+                    change: change,
+                    changePercent: changePercent,
+                    stockPrice: displayStockPrice,
+                    stockChange: stockChange,
+                    isForwardFilled: isForwardFilled,
+                    changeClass: changeClass,
+                    stockChangeClass: stockChangeClass
+                });
+            });
+
+            // Reset to page 1
+            currentPage = 1;
+            renderTablePage();
+        }
+
+        function renderTablePage() {
+            const totalRows = filteredTableData.length;
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+            const startIdx = (currentPage - 1) * rowsPerPage;
+            const endIdx = Math.min(startIdx + rowsPerPage, totalRows);
+            const pageData = filteredTableData.slice(startIdx, endIdx);
+
+            let html = '';
+            pageData.forEach((row) => {
                 html += `
                     <tr>
                         <td>${row.date}</td>
-                        <td>${formatNumber(row.daily_views)}</td>
-                        <td class="${changeClass}">${change >= 0 ? '+' : ''}${formatNumberInMillions(change)}</td>
-                        <td class="${changeClass}">${formatPercent(changePercent)}</td>
-                        <td>₹${stock?.close?.toFixed(2) || '--'}</td>
-                        <td class="${stockChangeClass}">${stock && prevStock ? (stockChange >= 0 ? '+' : '') + '₹' + stockChange.toFixed(2) : '--'}</td>
+                        <td>${formatNumber(row.dailyViews)}</td>
+                        <td class="${row.changeClass}">${row.change >= 0 ? '+' : ''}${formatNumberInMillions(row.change)}</td>
+                        <td class="${row.changeClass}">${formatPercent(row.changePercent)}</td>
+                        <td>
+                            ₹${row.stockPrice ? row.stockPrice.toFixed(2) : '--'}
+                            ${row.isForwardFilled ? '<span style="color:#94a3b8;font-size:0.8em;"> (prev)</span>' : ''}
+                        </td>
+                        <td class="${row.stockChangeClass}">
+                            ${row.stockPrice && row.stockChange !== 0 ? (row.stockChange >= 0 ? '+' : '') + '₹' + row.stockChange.toFixed(2) : '--'}
+                        </td>
                     </tr>
                 `;
             });
 
-            document.getElementById('dataTableBody').innerHTML = html || '<tr><td colspan="6" style="text-align: center;">No data for selected date range</td></tr>';
+            document.getElementById('dataTableBody').innerHTML = html || 
+                '<tr><td colspan="6" style="text-align: center;">No data for selected date range</td></tr>';
+
+            // Update pagination info
+            document.getElementById('paginationInfo').textContent = 
+                `Showing ${startIdx + 1}-${endIdx} of ${totalRows} records (Page ${currentPage} of ${totalPages})`;
+
+            // Update button states
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === totalPages;
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredTableData.length / rowsPerPage);
+            currentPage = Math.max(1, Math.min(currentPage + direction, totalPages));
+            renderTablePage();
         }
 
         // ============================================================================
